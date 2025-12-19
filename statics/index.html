@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Card Fraud Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #100f63 0%, #08406e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 40px;
+        }
+
+        .input-section {
+            background: #f8f9ff;
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid #e1e5f2;
+        }
+
+        .results-section {
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid #e1e5f2;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5f2;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .predict-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .predict-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .predict-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .test-data {
+            margin-top: 30px;
+        }
+
+        .test-data h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .test-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .test-btn {
+            background: #fff;
+            border: 2px solid #e1e5f2;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+
+        .test-btn:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .test-btn strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .test-btn small {
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .result-card {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .prediction-result {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .fraud {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+        }
+
+        .legitimate {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .confidence-bars {
+            margin: 20px 0;
+        }
+
+        .confidence-bar {
+            margin-bottom: 15px;
+        }
+
+        .confidence-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #e1e5f2;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .fraud-bar {
+            background: linear-gradient(135deg, #0e0a3d 0%, #1aa0aa 100%);
+        }
+
+        .legitimate-bar {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .transaction-details {
+            background: #fff;
+            border: 1px solid #e1e5f2;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .transaction-details h4 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f9;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Credit Card Fraud Detection</h1>
+            <p>Real-Time transaction analysis system</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <h2>Transaction Details</h2>
+                <form id="fraudForm">
+                    <div class="form-group">
+                        <label for="amount">Transaction Amount (₦)</label>
+                        <input type="number" id="amount" name="amount" step="0.01" min="0"
+                            placeholder="Enter amount in Naira" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="time">Time (seconds from midnight)</label>
+                        <input type="number" id="time" name="time" min="0" max="86400"
+                            placeholder="Enter time in seconds" required>
+                    </div>
+
+                    <button type="submit" class="predict-btn" id="predictBtn">
+                        🔍 Analyze Transaction
+                    </button>
+                </form>
+
+                <div class="test-data">
+                    <h3>📊 Test Cases</h3>
+                    <div class="test-buttons" id="testButtons">
+                        <!-- Test buttons will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="loading" id="loading">
+                    🔄 Analyzing transaction...
+                </div>
+            </div>
+
+            <div class="results-section">
+                <h2>Analysis Results</h2>
+                <div id="results" style="display: none;">
+                    <div id="predictionResult" class="prediction-result">
+                        <!-- Prediction result will appear here -->
+                    </div>
+
+                    <div class="confidence-bars">
+                        <div class="confidence-bar">
+                            <div class="confidence-label">
+                                <span>Fraud Confidence</span>
+                                <span id="fraudConfidence">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill fraud-bar" id="fraudBar"></div>
+                            </div>
+                        </div>
+
+                        <div class="confidence-bar">
+                            <div class="confidence-label">
+                                <span>Legitimate Confidence</span>
+                                <span id="legitConfidence">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill legitimate-bar" id="legitBar"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="transaction-details">
+                        <h4>📋 Transaction Summary</h4>
+                        <div class="detail-row">
+                            <span><strong>Amount:</strong></span>
+                            <span id="resultAmount">$0.00</span>
+                        </div>
+                        <div class="detail-row">
+                            <span><strong>Time:</strong></span>
+                            <span id="resultTime">00:00:00</span>
+                        </div>
+                        <div class="detail-row">
+                            <span><strong>Risk Level:</strong></span>
+                            <span id="riskLevel">Low</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="placeholder" style="text-align: center; color: #666; padding: 50px 0;">
+                    <h3>👆 Enter transaction details above</h3>
+                    <p>Use the form or test cases to analyze transactions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        // Load test data on page load
+        async function loadTestData() {
+            try {
+                const response = await fetch(`${API_BASE}/test-data`);
+                const testCases = await response.json();
+
+                const testButtons = document.getElementById('testButtons');
+                testButtons.innerHTML = '';
+
+                testCases.forEach(testCase => {
+                    const button = document.createElement('button');
+                    button.className = 'test-btn';
+                    button.innerHTML = `
+                        <strong>${testCase.name}</strong>
+                        <small>₦${testCase.amount.toLocaleString()} at ${formatTime(testCase.time)}<br>${testCase.description}</small>
+                    `;
+                    button.onclick = () => fillTestData(testCase.amount, testCase.time);
+                    testButtons.appendChild(button);
+                });
+            } catch (error) {
+                console.error('Error loading test data:', error);
+            }
+        }
+
+        // Fill form with test data
+        function fillTestData(amount, time) {
+            document.getElementById('amount').value = amount;
+            document.getElementById('time').value = time;
+        }
+
+        // Format time from seconds to HH:MM:SS
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Handle form submission
+        document.getElementById('fraudForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const amount = parseFloat(document.getElementById('amount').value);
+            const time = parseFloat(document.getElementById('time').value);
+
+            // Show loading state
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('predictBtn').disabled = true;
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('placeholder').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ amount, time })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Prediction failed');
+                }
+
+                const result = await response.json();
+                displayResults(result);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error analyzing transaction. Please try again.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('predictBtn').disabled = false;
+            }
+        });
+
+        // Display prediction results
+        function displayResults(result) {
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
+            const predictionElement = document.getElementById('predictionResult');
+            const isFraud = result.prediction === 'FRAUD';
+
+            predictionElement.textContent = `${isFraud ? '🚨' : '✅'} ${result.prediction}`;
+            predictionElement.className = `prediction-result ${isFraud ? 'fraud' : 'legitimate'}`;
+
+            // Update confidence bars
+            document.getElementById('fraudConfidence').textContent = `${result.fraud_confidence}%`;
+            document.getElementById('legitConfidence').textContent = `${result.legitimate_confidence}%`;
+
+            document.getElementById('fraudBar').style.width = `${result.fraud_confidence}%`;
+            document.getElementById('legitBar').style.width = `${result.legitimate_confidence}%`;
+
+            // Update transaction details
+            document.getElementById('resultAmount').textContent = `₦${result.amount.toLocaleString()}`;
+            document.getElementById('resultTime').textContent = formatTime(result.time);
+
+            // Determine risk level
+            let riskLevel = 'Low';
+            let riskColor = '#11998e';
+            if (result.fraud_confidence > 70) {
+                riskLevel = 'High';
+                riskColor = '#ff416c';
+            } else if (result.fraud_confidence > 30) {
+                riskLevel = 'Medium';
+                riskColor = '#ffa500';
+            }
+
+            const riskElement = document.getElementById('riskLevel');
+            riskElement.textContent = riskLevel;
+            riskElement.style.color = riskColor;
+            riskElement.style.fontWeight = 'bold';
+        }
+
+        // Load test data when page loads
+        window.addEventListener('load', loadTestData);
+
+        // ========================
+        // CONNECT TO SIMULATION STREAM
+        // ========================
+        const socket = new WebSocket("ws://localhost:8000/ws");
+
+        socket.onopen = () => {
+            console.log("✅ Connected to simulation stream");
+        };
+
+        socket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                displayResults(data); // Use your existing display function
+            } catch (error) {
+                console.error("Error processing simulation data:", error);
+            }
+        };
+
+        socket.onclose = () => {
+            console.log("❌ Disconnected from simulation stream");
+        };
+
+    </script>
+</body>
+
+</html>
